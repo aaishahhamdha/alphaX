@@ -20,6 +20,10 @@ resource function post orders(NewOrder newOrder) returns OrderCreated {
     OrderCreated response = {body: order1};
     return response;
 }
+   //get employees
+    resource function get employees() returns Employee[] {
+        return EmployeeTable.toArray();
+    }
 
 //post employees
 resource function post employees(NewEmployee newEmployee) returns EmployeeCreated {
