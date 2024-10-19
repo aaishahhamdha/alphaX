@@ -1,0 +1,65 @@
+.dashboard{
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    grid-template-areas: "left right";
+    height: 100vh;
+    background-color: var(--green);
+}
+
+.left{
+    grid-area: left;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: var(--green);
+}
+
+.right{
+    grid-area: right;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top-left-radius: 10%;
+    border-bottom-left-radius: 10%;
+    background-color: var(--background-color);
+}
+
+.admin-left{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+    "col1 col2";
+    gap: 3%;
+}
+
+.col2{
+    grid-area: col2;
+    padding: 15px;
+    border-color: var(--border-color);
+    border-radius: 5%;
+    border: 1px solid var(--border-color);
+}
+
+.col1{
+    grid-area: col1;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: 
+    "col1-top" 
+    "col1-bot";
+    gap: 3%;
+    overflow-y: auto;
+}
+
+.col1-top{
+    grid-area: col1-top;
+    padding: 10px;
+}
+
+.col1-bot{
+    grid-area: col1-bot;
+    padding: 15px;
+    overflow-y: auto;
+    border-radius: 5%;
+    border: 1px solid var(--border-color);
+}
+

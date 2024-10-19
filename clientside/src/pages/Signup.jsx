@@ -1,8 +1,12 @@
 import React from 'react'
+import "../index.css"
+import SignupForm from '../Components/SignupForm'
 
 const Signup = () => {
   return (
-    <div>Signup</div>
+    <div className='full-screen-container'>
+        <SignupForm></SignupForm>
+    </div>
   )
 }
 
