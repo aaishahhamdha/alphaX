@@ -51,6 +51,17 @@ public type EmployeeCreated record {|
     Employee body;
 |};
 
+type MealCountRecord record {|
+    int mealtypeId;
+    int count;
+|};
+
+type OrderCountRecord record {|
+    int mealtimeId;
+    MealCountRecord[] mealCounts;
+|};
+
+
 
 
 

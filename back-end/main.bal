@@ -39,4 +39,64 @@ resource function post employees(NewEmployee newEmployee) returns EmployeeCreate
     }
    
 
+
+// order count for each meal time - counts for 3 types
+resource function get orderCounts() returns json {
+    OrderCountRecord[] counts = [];
+
+    
+    foreach var orderItem in OrderTable {
+        int mealtimeId = orderItem.mealtimeId;
+        int mealtypeId = orderItem.mealtypeId;
+
+        
+        OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtimeId);
+        
+        if mealtimeRecords.length() > 0 {
+            OrderCountRecord mealtimeRecord = mealtimeRecords[0];
+            
+           
+            MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtypeId);
+            
+            if mealRecords.length() > 0 {
+                MealCountRecord mealRecord = mealRecords[0];
+              
+                mealRecord.count += 1;
+            } else {
+                
+                mealtimeRecord.mealCounts.push({ mealtypeId: mealtypeId, count: 1 });
+            }
+        } else {
+        
+            counts.push({
+                mealtimeId: mealtimeId,
+                mealCounts: [{ mealtypeId: mealtypeId, count: 1 }]
+            });
+        }
+    }
+
+   
+    map<json> result = {};  
+    foreach var mealtime in MealtimeTable {
+        map<json> mealtypeCounts = {};  
+        foreach var mealtype in MealtypeTable {
+            
+            int count = 0;
+            OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtime.id);
+            if mealtimeRecords.length() > 0 {
+                OrderCountRecord mealtimeRecord = mealtimeRecords[0];
+                MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtype.id);
+                if mealRecords.length() > 0 {
+                    count = mealRecords[0].count;
+                }
+            }
+            mealtypeCounts[mealtype.name.toString()] = count;
+        }
+        result[mealtime.name.toString()] = mealtypeCounts;
+    }
+
+    return result;
+}
+
+
 }
