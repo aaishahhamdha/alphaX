@@ -1,17 +1,20 @@
 import React from 'react'
 import {Routes , Route} from 'react-router-dom';
-import Dashboard from './pages/Dashboard'
+import Dashboard from './pages/Employee'
 import Signin from './pages/Signin'
 import Signup from './pages/Signup'
-import Header from './components/Header';
+import './index.css'
+import Admin from './pages/Admin';
+
+
 
 const App = () => {
   return (
     <>
-    <Header/>
     <Routes>
 
-   <Route path="/dashboard" element={<Dashboard />} />
+   <Route path="/employee" element={<Dashboard />} />
+   <Route path="/admin" element={<Admin />} />
  
    <Route path="/signin" element={<Signin />} />
    <Route path="/signup" element={<Signup />} />

@@ -7,4 +7,58 @@
   --text-secondary: #4f4f4f;
   --orange: #ff7300;
   --green: #20b6b0;
+
+  --font-size-heading: 3rem;
+  --font-size-subheading: 2rem;
+  --font-size-normal: 1rem;
+  --font-size-small: 0.5rem;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.full-screen-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--background-color2);
+  overflow-y: auto;
+}
+
+
+.formCss{
+  width: auto;
+  display: block;
+  text-align: center;
+  padding: 5px;
+  margin-bottom: 2px;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.headingForm{
+  color: var(--orange);
+  font-size: var(--font-size-heading)
+}
+
+.custom-cal-full-css .MuiDateCalendar-root{
+  transform: scale(1.4);
+  transform-origin: center;
+  color: white;
+  font-weight: bold;
+}
+
+.custom-cal-header-css .MuiPickersCalendarHeader-root{
+  background-color: var(--orange);
+}
+
+.effect{
+  box-shadow: 0px 3px 1px rgba(0, 0, 0, 0.2), /* Main shadow */
+  0px 0px 0px rgba(255, 255, 255, 0.3); /* Soft highlight */
+
+border-radius: 5px;
 }
