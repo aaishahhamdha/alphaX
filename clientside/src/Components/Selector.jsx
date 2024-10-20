@@ -9,8 +9,8 @@ import empty from './Images/empty.png'
 import '../index.css'
 
 export default function LabTabs() {
-  const main = ["one", "two", "three", "four"];
-  const sub = ["Veg", "Non-Veg"];
+  const main = ["Breakfast", "Lunch", "Dinner"];
+  const sub = ["Veg", "Non-Veg", "Egg"];
   const veg = ["v1", "v2", "v3", "v4"];
   const nv = ["nv1", "nv2", "nv3", "nv4"];
 
@@ -39,7 +39,6 @@ export default function LabTabs() {
 
   const handleSubmit = () => {
     alert("Selected Items: " + selectedItems.join(', '));
-    // Handle submit logic here, such as sending data to an API
   };
 
   return (
@@ -53,6 +52,14 @@ export default function LabTabs() {
                 fontSize: 'var(--font-size-normal)',
                 fontWeight : 'bold',
                 padding: '1%',
+                '&:hover': {
+                  color: 'var(--orange)',
+                  border: 'none'
+                },
+                '&.Mui-selected': {
+                  color: 'var(--orange)', 
+                  border: 'none'
+                }
                 }}/>
             ))}
           </TabList>
@@ -69,7 +76,16 @@ export default function LabTabs() {
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2, backgroundColor: 'var(--text-primary)'}}>
                   <TabList onChange={handleSubChange} aria-label="Sub Tabs">
                     {sub.map((subItem, subIndex) => (
-                      <Tab key={subIndex} label={subItem} value={String(subIndex)} sx={{color: 'var(--background-color)'}}/>
+                      <Tab key={subIndex} label={subItem} value={String(subIndex)} 
+                      sx={{color: 'var(--background-color)', 
+                                  '&:hover': {
+                                     color: 'var(--orange)', 
+                                    border: 'none'
+                          },
+                                  '&.Mui-selected': {
+                                     color: 'var(--orange)', 
+                                     border: 'none'
+                      }}}/>
                     ))}
                   </TabList>
                 </Box>
@@ -123,7 +139,7 @@ export default function LabTabs() {
         )}
       </TabContext>
 
-      {/* Selected items box */}
+      
       <Box sx={{ mt: 3, p: 2, border: '1px solid #ddd', borderRadius: '4px', backgroundColor: 'var(--green)'}}>
         <Typography variant="h6" >Selected Items</Typography>
         {selectedItems.length == 0 ? (
@@ -141,7 +157,6 @@ export default function LabTabs() {
         )}
       </Box>
 
-      {/* Submit button */}
       <Button 
         variant="contained" 
         sx={{ mt: 2 }} 

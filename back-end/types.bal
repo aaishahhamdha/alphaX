@@ -1,5 +1,7 @@
+import ballerinax/mysql.driver as _;
 import ballerina/persist as _;
 import ballerina/http;
+
 
 public type Employee record {|
     readonly int id;
