@@ -24,6 +24,7 @@ function FormFood() {
       >
         <FormControlLabel value="veg" control={<Radio />} label="Vegeterian" />
         <FormControlLabel value="nonVeg" control={<Radio />} label="Non-Vegetarian" />
+        <FormControlLabel value="egg" control={<Radio />} label="Egg" />
       </RadioGroup>
 
       <FormLabel id="demo-controlled-radio-buttons-group">Time</FormLabel>
@@ -34,7 +35,6 @@ function FormFood() {
         <FormControlLabel value="Breakfast" control={<Radio />} label="Breakfast" />
         <FormControlLabel value="Lunch" control={<Radio />} label="Lunch" />
         <FormControlLabel value="Dinner" control={<Radio />} label="Dinner" />
-        <FormControlLabel value="Snacks" control={<Radio />} label="Snacks" />
       </RadioGroup>
       <SubmitButton buttonTitle="Add Food"></SubmitButton>
     </form>
