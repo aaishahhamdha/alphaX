@@ -42,8 +42,8 @@ public type NewEmployee record {|
     string mail;
     string name;
     string password;
-
 |};
+
 
 
 public type EmployeeCreated record {|

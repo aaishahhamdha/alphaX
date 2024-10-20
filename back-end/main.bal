@@ -26,17 +26,19 @@ resource function post orders(NewOrder newOrder) returns OrderCreated {
     }
 
 //post employees
-resource function post employees(NewEmployee newEmployee) returns EmployeeCreated {
-        int id = EmployeeTable.nextKey();
-        Employee employee1 = {
-            id: id,
-            ...newEmployee
-        };
+resource function post employees(NewEmployee newEmployee) returns string {
+    int id = EmployeeTable.nextKey(); 
+    Employee employee1 = {
+        id: id,    
+        ...newEmployee 
+    };
 
-        EmployeeTable.add(employee1);
-        EmployeeCreated response = {body: employee1};
-        return response;
-    }
+    EmployeeTable.add(employee1);
+    return "User created successfully with ID: " + id.toString();
+}
+
+
+
    
 
 
@@ -98,5 +100,67 @@ resource function get orderCounts() returns json {
     return result;
 }
 
+
+// order count for each meal time - counts for 3 types BY DATE
+ resource function get orderCountsForDate(http:Caller caller, http:Request req, string inputDate) returns error? {
+        OrderCountRecord[] counts = [];
+
+      
+        foreach var orderItem in OrderTable {
+            
+            if orderItem.date == inputDate {
+
+                int mealtimeId = orderItem.mealtimeId;
+                int mealtypeId = orderItem.mealtypeId;
+
+                OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtimeId);
+
+                if mealtimeRecords.length() > 0 {
+                    OrderCountRecord mealtimeRecord = mealtimeRecords[0];
+
+                   
+                    MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtypeId);
+
+                    if (mealRecords.length() > 0) {
+                        MealCountRecord mealRecord = mealRecords[0];
+                       
+                        mealRecord.count += 1;
+                    } else {
+                      
+                        mealtimeRecord.mealCounts.push({ mealtypeId: mealtypeId, count: 1 });
+                    }
+                } else {
+                    
+                    counts.push({
+                        mealtimeId: mealtimeId,
+                        mealCounts: [{ mealtypeId: mealtypeId, count: 1 }]
+                    });
+                }
+            }
+        }
+
+     
+        map<json> result = {};  
+        foreach var mealtime in MealtimeTable {
+            map<json> mealtypeCounts = {};  
+            foreach var mealtype in MealtypeTable {
+                
+                int count = 0;
+                OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtime.id);
+                if mealtimeRecords.length() > 0 {
+                    OrderCountRecord mealtimeRecord = mealtimeRecords[0];
+                    MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtype.id);
+                    if mealRecords.length() > 0 {
+                        count = mealRecords[0].count;
+                    }
+                }
+                mealtypeCounts[mealtype.name.toString()] = count;
+            }
+            result[mealtime.name.toString()] = mealtypeCounts;
+        }
+
+      
+        check caller->respond(result);
+    }
 
 }
