@@ -13,6 +13,89 @@ final mysql:Client dbClient = check new(
 
 service /api on new http:Listener(9090) {
 
+     // Sign in (Login)
+    resource function post signin(http:Caller caller, LoginRequest loginRequest) returns error? {
+       
+        sql:ParameterizedQuery selectQuery = `SELECT id, mail, name, password FROM Employee WHERE mail = ${loginRequest.mail}`;
+        
+        stream<Employee, sql:Error?> resultStream = dbClient->query(selectQuery);
+
+       
+        Employee? employee;
+        check from Employee emp in resultStream
+            do {
+                employee = emp;
+            };
+        
+        if employee is () {
+          
+            http:Response res = new;
+            res.statusCode = 404;
+            res.setPayload({message: "User not found"});
+            check caller->respond(res);
+            return;
+        }
+
+      
+        if employee.password == loginRequest.password {
+            // Successful login
+            UserData userData = {
+                name: employee.name,
+                mail: employee.mail
+            };
+
+            http:Response res = new;
+            res.setPayload(userData);
+            check caller->respond(res);
+        } else {
+            // Incorrect password
+            http:Response res = new;
+            res.statusCode = 401;
+            res.setPayload({message: "Invalid credentials"});
+            check caller->respond(res);
+        }
+    }
+
+    // Sign up (Register)
+    resource function post signup(http:Caller caller, NewEmployee newEmployee) returns error? {
+      
+        sql:ParameterizedQuery selectQuery = `SELECT id FROM Employee WHERE mail = ${newEmployee.mail}`;
+        
+        stream<Employee, sql:Error?> resultStream = dbClient->query(selectQuery);
+        Employee? existingEmployee;
+        check from Employee emp in resultStream
+            do {
+                existingEmployee = emp;
+            };
+
+        if existingEmployee is Employee {
+          
+            http:Response res = new;
+            res.statusCode = 409;
+            res.setPayload({message: "Email already exists"});
+            check caller->respond(res);
+            return;
+        }
+
+        sql:ParameterizedQuery insertQuery = `INSERT INTO Employee (mail, name, password)
+            VALUES (${newEmployee.mail}, ${newEmployee.name}, ${newEmployee.password})`;
+        var result = dbClient->execute(insertQuery);
+
+        if result is sql:ExecutionResult {
+         
+            http:Response res = new;
+            res.statusCode = 201;
+            res.setPayload({message: "Employee registered successfully"});
+            check caller->respond(res);
+        } else {
+           
+            http:Response res = new;
+            res.statusCode = 500;
+            res.setPayload({message: "Failed to register employee"});
+            check caller->respond(res);
+        }
+    }
+
     // Get all orders
     resource function get orders() returns Order1[] | error {
         Order1[] orders = [];
@@ -129,6 +212,16 @@ function addCorsHeaders(http:Response response) {
 
 // Types
 
+public type LoginRequest record {|
+    string mail;
+    string password;
+|};
+
+public type UserData record {|
+    string name;
+    string mail;
+|};
+
 public type Employee record {|
     readonly int id;
     string mail;
@@ -136,6 +229,11 @@ public type Employee record {|
     string password;
 |};
 
+public type NewEmployee record {|
+    string mail;
+    string name;
+    string password;
+|};
 public type Mealtime record {|
     readonly int id;
     string name;
@@ -166,11 +264,7 @@ type OrderCreated1 record {|
     Order1 body;
 |};
 
-public type NewEmployee record {|
-    string mail;
-    string name;
-    string password;
-|};
+
 
 type MealCountRecord record {|
     int mealtypeId;
