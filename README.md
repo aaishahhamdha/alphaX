@@ -10,6 +10,7 @@ Follow the instructions below to set up the project locally:
 
 
 
+
 ## 1. Frontend (Client-side)
 
 Open your terminal and follow these steps:
@@ -21,13 +22,15 @@ cd clientside
 npm i
 
 ### Start the development server
+
 npm run dev
 
 
 
-## 2. Backend
+### 2. Backend
 
 After setting up the frontend, return to the root directory and start the backend:
+
 
 
 ### Go back to the root directory
@@ -37,4 +40,5 @@ cd ../
 cd back-end
 
 ### Run the Ballerina backend
+
 bal run

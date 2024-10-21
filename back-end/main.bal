@@ -1,189 +1,184 @@
 import ballerina/http;
 import ballerinax/mysql;
+import ballerina/sql;
 import ballerinax/mysql.driver as _;
-
-
 
 final mysql:Client dbClient = check new(
     host = "localhost",
     user = "root",
-    password = "0000",
+    password = "Aaishah1234",
     port = 3306,
-    database = "flexmeals"
+    database = "meal_management"
 );
 
 service /api on new http:Listener(9090) {
-   
-   //get orders
-    resource function get orders() returns Order[] {
-        return OrderTable.toArray();
+
+    // Get all orders
+    resource function get orders() returns Order1[] | error {
+        Order1[] orders = [];
+        stream<Order1, sql:Error?> orderStream = dbClient->query(
+            `SELECT id, employeeId, mealtypeId, mealtimeId, date FROM Order1`
+        );
+        check from Order1 order1 in orderStream
+            do {
+                orders.push(order1);
+            };
+        return orders;
     }
 
-//post orders
-resource function post orders(NewOrder newOrder) returns OrderCreated {
-    int id = OrderTable.nextKey();
-    Order order1 = {
-        id: id,
-        ...newOrder
-    };
+    // Post a new order
+    resource function post orders(http:Caller caller, http:Request req) returns error? {
+        json payload = check req.getJsonPayload();
+        NewOrder1 newOrder1 = check payload.cloneWithType(NewOrder1);
 
-    OrderTable.add(order1);
-    OrderCreated response = {body: order1};
-    return response;
-}
-   //get employees
-    resource function get employees() returns Employee[] | error {
-        return EmployeeTable.toArray();
-    }
-
-//post employees
-resource function post employees(NewEmployee newEmployee) returns string {
-    int id = EmployeeTable.nextKey(); 
-    Employee employee1 = {
-        id: id,    
-        ...newEmployee 
-    };
-
-    EmployeeTable.add(employee1);
-    return "User created successfully with ID: " + id.toString();
-}
-
-
-
-   
-
-
-// order count for each meal time - counts for 3 types
-resource function get orderCounts(http:Caller caller) returns error? {
-    // Create a new response
-    http:Response res = new;
-    
-    // Function to add CORS headers
-    addCorsHeaders(res);
-    
-    OrderCountRecord[] counts = [];
-    
-    foreach var orderItem in OrderTable {
-        int mealtimeId = orderItem.mealtimeId;
-        int mealtypeId = orderItem.mealtypeId;
-
-        // Filter records by mealtimeId
-        OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtimeId);
-        
-        if mealtimeRecords.length() > 0 {
-            OrderCountRecord mealtimeRecord = mealtimeRecords[0];
-            
-            // Filter meal records by mealtypeId
-            MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtypeId);
-            
-            if mealRecords.length() > 0 {
-                MealCountRecord mealRecord = mealRecords[0];
-                mealRecord.count += 1; // Increment count if found
-            } else {
-                mealtimeRecord.mealCounts.push({ mealtypeId: mealtypeId, count: 1 }); // Add new meal record
-            }
+       
+        sql:ParameterizedQuery insertQuery = `INSERT INTO Order1 (employeeId, mealtypeId, mealtimeId, date)
+            VALUES (${newOrder1.employeeId}, ${newOrder1.mealtypeId}, ${newOrder1.mealtimeId}, ${newOrder1.date})`;
+        var result = dbClient->execute(insertQuery);
+        if result is sql:ExecutionResult {
+            check caller->respond({message: "Order added successfully"});
         } else {
-            // Add new mealtime record with the meal record
-            counts.push({
-                mealtimeId: mealtimeId,
-                mealCounts: [{ mealtypeId: mealtypeId, count: 1 }]
-            });
+            check caller->respond({message: "Failed to add order"});
         }
     }
 
-    // Create the final result map
-    map<json> result = {};  
-    foreach var mealtime in MealtimeTable {
-        map<json> mealtypeCounts = {};  
-        foreach var mealtype in MealtypeTable {
-            int count = 0;
-            OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtime.id);
-            if mealtimeRecords.length() > 0 {
-                OrderCountRecord mealtimeRecord = mealtimeRecords[0];
-                MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtype.id);
-                if mealRecords.length() > 0 {
-                    count = mealRecords[0].count;
-                }
-            }
-            mealtypeCounts[mealtype.name.toString()] = count;
+    // Post a new employee
+    resource function post employees(http:Caller caller, http:Request req) returns error? {
+        json payload = check req.getJsonPayload();
+        NewEmployee newEmployee = check payload.cloneWithType(NewEmployee);
+
+        
+        sql:ParameterizedQuery insertQuery = `INSERT INTO Employee (mail, name, password)
+            VALUES (${newEmployee.mail}, ${newEmployee.name}, ${newEmployee.password})`;
+        var result = dbClient->execute(insertQuery);
+        if result is sql:ExecutionResult {
+            check caller->respond({message: "Employee added successfully"});
+        } else {
+            check caller->respond({message: "Failed to add employee"});
         }
-        result[mealtime.name.toString()] = mealtypeCounts;
     }
 
-    // Set the result payload and return the response
-    res.setPayload(result);
-    
-    // Send the response with CORS headers
-    check caller->respond(res);
-}
+    // Get all employees
+    resource function get employees() returns Employee[] | error {
+        Employee[] employees = [];
+        stream<Employee, sql:Error?> employeeStream = dbClient->query(
+            `SELECT id, mail, name, password FROM Employee`
+        );
+        check from Employee employee in employeeStream
+            do {
+                employees.push(employee);
+            };
+        return employees;
+    }
 
+    // Get order count for each mealtime and meal type
+    resource function get orderCounts(http:Caller caller) returns error? {
+        map<json> result = {};
+        
+        stream<OrderCountRecord, sql:Error?> countStream = dbClient->query(
+            `SELECT o.mealtimeId, o.mealtypeId, COUNT(*) as count 
+            FROM Order1 o 
+            GROUP BY o.mealtimeId, o.mealtypeId`
+        );
 
-// order count for each meal time - counts for 3 types BY DATE
- resource function get orderCountsForDate(http:Caller caller, http:Request req, string inputDate) returns error? {
-        OrderCountRecord[] counts = [];
+        map<json> mealCounts = {};
+        check from OrderCountRecord countRec in countStream
+            do {
+                mealCounts[countRec.mealtypeId.toString()] = countRec.count;
+                result[countRec.mealtimeId.toString()] = mealCounts;
+            };
 
-      
-        foreach var orderItem in OrderTable {
-            
-            if orderItem.date == inputDate {
+        http:Response res = new;
+        res.setPayload(result);
+        addCorsHeaders(res);
+        check caller->respond(res);
+    }
 
-                int mealtimeId = orderItem.mealtimeId;
-                int mealtypeId = orderItem.mealtypeId;
+    // Get order count for a specific date
+    resource function get orderCountsForDate(http:Caller caller, http:Request req, string inputDate) returns error? {
+        map<json> result = {};
+        
+        stream<OrderCountRecord, sql:Error?> countStream = dbClient->query(
+            `SELECT o.mealtimeId, o.mealtypeId, COUNT(*) as count 
+            FROM Order1 o 
+            WHERE o.date = ${inputDate} 
+            GROUP BY o.mealtimeId, o.mealtypeId`
+        );
 
-                OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtimeId);
+        map<json> mealCounts = {};
+        check from OrderCountRecord countRec in countStream
+            do {
+                mealCounts[countRec.mealtypeId.toString()] = countRec.count;
+                result[countRec.mealtimeId.toString()] = mealCounts;
+            };
 
-                if mealtimeRecords.length() > 0 {
-                    OrderCountRecord mealtimeRecord = mealtimeRecords[0];
-
-                   
-                    MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtypeId);
-
-                    if (mealRecords.length() > 0) {
-                        MealCountRecord mealRecord = mealRecords[0];
-                       
-                        mealRecord.count += 1;
-                    } else {
-                      
-                        mealtimeRecord.mealCounts.push({ mealtypeId: mealtypeId, count: 1 });
-                    }
-                } else {
-                    
-                    counts.push({
-                        mealtimeId: mealtimeId,
-                        mealCounts: [{ mealtypeId: mealtypeId, count: 1 }]
-                    });
-                }
-            }
-        }
-
-     
-        map<json> result = {};  
-        foreach var mealtime in MealtimeTable {
-            map<json> mealtypeCounts = {};  
-            foreach var mealtype in MealtypeTable {
-                
-                int count = 0;
-                OrderCountRecord[] mealtimeRecords = counts.filter(rec => rec.mealtimeId == mealtime.id);
-                if mealtimeRecords.length() > 0 {
-                    OrderCountRecord mealtimeRecord = mealtimeRecords[0];
-                    MealCountRecord[] mealRecords = mealtimeRecord.mealCounts.filter(meal => meal.mealtypeId == mealtype.id);
-                    if mealRecords.length() > 0 {
-                        count = mealRecords[0].count;
-                    }
-                }
-                mealtypeCounts[mealtype.name.toString()] = count;
-            }
-            result[mealtime.name.toString()] = mealtypeCounts;
-        }
-
-      
-        check caller->respond(result);
+        http:Response res = new;
+        res.setPayload(result);
+        addCorsHeaders(res);
+        check caller->respond(res);
     }
 
 }
+
 // Function to add CORS headers
 function addCorsHeaders(http:Response response) {
     response.setHeader("Access-Control-Allow-Origin", "*");
     response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
+
+// Types
+
+public type Employee record {|
+    readonly int id;
+    string mail;
+    string name;
+    string password;
+|};
+
+public type Mealtime record {|
+    readonly int id;
+    string name;
+|};
+
+public type Mealtype record {|
+    readonly int id;
+    string name;
+|};
+
+public type Order1 record {|
+    readonly int id;
+    int employeeId;
+    int mealtypeId;
+    int mealtimeId;
+    string date;
+|};
+
+public type NewOrder1 record {|
+    int employeeId;
+    int mealtypeId;
+    int mealtimeId;
+    string date;
+|};
+
+type OrderCreated1 record {|
+    *http:Created;
+    Order1 body;
+|};
+
+public type NewEmployee record {|
+    string mail;
+    string name;
+    string password;
+|};
+
+type MealCountRecord record {|
+    int mealtypeId;
+    int count;
+|};
+
+type OrderCountRecord record {|
+    int mealtimeId;
+    int mealtypeId;
+    int count;
+|};
